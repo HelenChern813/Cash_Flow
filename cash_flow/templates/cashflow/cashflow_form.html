@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Редактирование{% else %}Создание{% endif %} записи ДДС{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Функция для загрузки категорий
+    function loadCategories(operationTypeId, selectedCategoryId = null) {
+        if (operationTypeId) {
+            $.ajax({
+                url: '{% url "cash_flow:get_categories" %}',
+                data: {'operation_type_id': operationTypeId},
+                success: function(data) {
+                    var categorySelect = $('#id_category');
+                    categorySelect.empty();
+                    categorySelect.append('<option value="">---------</option>');
+                    $.each(data, function(index, category) {
+                        var selected = (selectedCategoryId && category.id == selectedCategoryId) ? 'selected' : '';
+                        categorySelect.append('<option value="' + category.id + '" ' + selected + '>' + category.name + '</option>');
+                    });
+
+                    // Если есть выбранная категория, загружаем подкатегории
+                    if (selectedCategoryId) {
+                        loadSubcategories(selectedCategoryId, '{{ form.instance.subcategory.id }}');
+                    } else {
+                        $('#id_subcategory').empty().append('<option value="">---------</option>');
+                    }
+                }
+            });
+        } else {
+            $('#id_category').empty().append('<option value="">---------</option>');
+            $('#id_subcategory').empty().append('<option value="">---------</option>');
+        }
+    }
+
+    // Функция для загрузки подкатегорий
+    function loadSubcategories(categoryId, selectedSubcategoryId = null) {
+        if (categoryId) {
+            $.ajax({
+                url: '{% url "cash_flow:get_subcategories" %}',
+                data: {'category_id': categoryId},
+                success: function(data) {
+                    var subcategorySelect = $('#id_subcategory');
+                    subcategorySelect.empty();
+                    subcategorySelect.append('<option value="">---------</option>');
+                    $.each(data, function(index, subcategory) {
+                        var selected = (selectedSubcategoryId && subcategory.id == selectedSubcategoryId) ? 'selected' : '';
+                        subcategorySelect.append('<option value="' + subcategory.id + '" ' + selected + '>' + subcategory.name + '</option>');
+                    });
+                }
+            });
+        } else {
+            $('#id_subcategory').empty().append('<option value="">---------</option>');
+        }
+    }
+
+    // Обработчик изменения типа операции
+    $('#id_operation_type').change(function() {
+        var operationTypeId = $(this).val();
+        loadCategories(operationTypeId);
+    });
+
+    // Обработчик изменения категории
+    $('#id_category').change(function() {
+        var categoryId = $(this).val();
+        loadSubcategories(categoryId);
+    });
+
+    // Инициализация при загрузке страницы
+    var initialOperationTypeId = $('#id_operation_type').val();
+    var initialCategoryId = $('#id_category').val();
+    var initialSubcategoryId = '{{ form.instance.subcategory.id }}';
+
+    if (initialOperationTypeId && initialCategoryId) {
+        loadCategories(initialOperationTypeId, initialCategoryId);
+    } else if (initialOperationTypeId) {
+        loadCategories(initialOperationTypeId);
+    }
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="bi bi-{% if form.instance.pk %}pencil{% else %}plus-circle{% endif %}"></i>
+                    {% if form.instance.pk %}Редактирование записи{% else %}Создание новой записи{% endif %}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.date.id_for_label }}" class="form-label">{{ form.date.label }} *</label>
+                            {{ form.date }}
+                            {% if form.date.errors %}
+                                <div class="text-danger small">{{ form.date.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="{{ form.amount.id_for_label }}" class="form-label">{{ form.amount.label }} *</label>
+                            {{ form.amount }}
+                            {% if form.amount.errors %}
+                                <div class="text-danger small">{{ form.amount.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">{{ form.status.label }} *</label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                                <div class="text-danger small">{{ form.status.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="{{ form.operation_type.id_for_label }}" class="form-label">{{ form.operation_type.label }} *</label>
+                            {{ form.operation_type }}
+                            {% if form.operation_type.errors %}
+                                <div class="text-danger small">{{ form.operation_type.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="{{ form.category.id_for_label }}" class="form-label">{{ form.category.label }} *</label>
+                            {{ form.category }}
+                            {% if form.category.errors %}
+                                <div class="text-danger small">{{ form.category.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="{{ form.subcategory.id_for_label }}" class="form-label">{{ form.subcategory.label }} *</label>
+                            {{ form.subcategory }}
+                            {% if form.subcategory.errors %}
+                                <div class="text-danger small">{{ form.subcategory.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-12">
+                            <label for="{{ form.comment.id_for_label }}" class="form-label">{{ form.comment.label }}</label>
+                            {{ form.comment }}
+                            {% if form.comment.errors %}
+                                <div class="text-danger small">{{ form.comment.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i>
+                            {% if form.instance.pk %}Сохранить изменения{% else %}Создать запись{% endif %}
+                        </button>
+                        <a href="{% url 'cash_flow:cashflow_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Отмена
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
