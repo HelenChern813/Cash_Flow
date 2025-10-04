@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Записи ДДС{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-list-ul"></i> Записи движения денежных средств</h1>
+</div>
+
+<!-- Фильтры -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-funnel"></i> Фильтры</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-2">
+                <label class="form-label">Дата с</label>
+                <input type="date" name="start_date" class="form-control" value="{{ filter_params.start_date }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Дата по</label>
+                <input type="date" name="end_date" class="form-control" value="{{ filter_params.end_date }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Статус</label>
+                <select name="status" class="form-control">
+                    <option value="">Все</option>
+                    {% for status in statuses %}
+                        <option value="{{ status.id }}" {% if filter_params.status == status.id|stringformat:"i" %}selected{% endif %}>
+                            {{ status.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Тип операции</label>
+                <select name="operation_type" class="form-control">
+                    <option value="">Все</option>
+                    {% for type in operation_types %}
+                        <option value="{{ type.id }}" {% if filter_params.operation_type == type.id|stringformat:"i" %}selected{% endif %}>
+                            {{ type.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Категория</label>
+                <select name="category" class="form-control">
+                    <option value="">Все</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}" {% if filter_params.category == category.id|stringformat:"i" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Подкатегория</label>
+                <select name="subcategory" class="form-control">
+                    <option value="">Все</option>
+                    {% for subcategory in subcategories %}
+                        <option value="{{ subcategory.id }}" {% if filter_params.subcategory == subcategory.id|stringformat:"i" %}selected{% endif %}>
+                            {{ subcategory.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-funnel"></i> Применить фильтры
+                </button>
+                <a href="{% url 'cash_flow:cashflow_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Сбросить
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Таблица записей -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Список операций</h5>
+        <span class="badge bg-primary">Всего: {{ cashflows.count }}</span>
+    </div>
+    <div class="card-body p-0">
+        {% if cashflows %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Дата</th>
+                            <th>Статус</th>
+                            <th>Тип</th>
+                            <th>Категория</th>
+                            <th>Подкатегория</th>
+                            <th>Сумма</th>
+                            <th>Комментарий</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cashflow in cashflows %}
+                        <tr>
+                            <td>{{ cashflow.date|date:"d.m.Y" }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if cashflow.status.name == 'Бизнес' %}bg-primary
+                                    {% elif cashflow.status.name == 'Личное' %}bg-success
+                                    {% elif cashflow.status.name == 'Налог' %}bg-warning
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ cashflow.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    {% if cashflow.operation_type.name == 'Пополнение' %}bg-success
+                                    {% else %}bg-danger{% endif %}">
+                                    {{ cashflow.operation_type }}
+                                </span>
+                            </td>
+                            <td>{{ cashflow.category }}</td>
+                            <td>{{ cashflow.subcategory }}</td>
+                            <td>
+                                <strong class="{% if cashflow.operation_type.name == 'Пополнение' %}text-success{% else %}text-danger{% endif %}">
+                                    {{ cashflow.amount }} ₽
+                                </strong>
+                            </td>
+                            <td>
+                                {% if cashflow.comment %}
+                                    <small class="text-muted">{{ cashflow.comment|truncatechars:50 }}</small>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'cash_flow:cashflow_edit' cashflow.pk %}" class="btn btn-outline-primary" title="Редактировать">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'cash_flow:cashflow_delete' cashflow.pk %}" class="btn btn-outline-danger" title="Удалить">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted"></i>
+                <h4 class="text-muted mt-3">Нет записей</h4>
+                <p class="text-muted">Начните с добавления первой записи о движении денежных средств</p>
+                <a href="{% url 'cash_flow:cashflow_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Добавить запись
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Пагинация -->
+{% if is_paginated %}
+<div class="mt-4">
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Первая</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Назад</a>
+                </li>
+            {% endif %}
+
+            <li class="page-item active">
+                <span class="page-link">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+            </li>
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Вперед</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Последняя</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
+{% endblock %}
