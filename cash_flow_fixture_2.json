@@ -1,0 +1,350 @@
+[
+{
+    "model": "cash_flow.status",
+    "pk": 1,
+    "fields": {
+        "name": "Личное",
+        "description": "Личный статус 2",
+        "user": null
+    }
+},
+{
+    "model": "cash_flow.status",
+    "pk": 2,
+    "fields": {
+        "name": "Бизнес",
+        "description": "Бизнес статус",
+        "user": null
+    }
+},
+{
+    "model": "cash_flow.status",
+    "pk": 3,
+    "fields": {
+        "name": "Налог",
+        "description": "Оплата налогов",
+        "user": null
+    }
+},
+{
+    "model": "cash_flow.status",
+    "pk": 4,
+    "fields": {
+        "name": "Личное",
+        "description": "Для личного использования",
+        "user": 2
+    }
+},
+{
+    "model": "cash_flow.status",
+    "pk": 5,
+    "fields": {
+        "name": "Бизнес",
+        "description": "Бизнес расходы/доходы",
+        "user": 2
+    }
+},
+{
+    "model": "cash_flow.operationtype",
+    "pk": 1,
+    "fields": {
+        "name": "Пополнение",
+        "description": "Зачисление денег на счет",
+        "user": null
+    }
+},
+{
+    "model": "cash_flow.operationtype",
+    "pk": 2,
+    "fields": {
+        "name": "Списание",
+        "description": "Забрали со счета денежки",
+        "user": null
+    }
+},
+{
+    "model": "cash_flow.operationtype",
+    "pk": 3,
+    "fields": {
+        "name": "Возврат",
+        "description": "Тоже пополнение, но суть операции другая",
+        "user": null
+    }
+},
+{
+    "model": "cash_flow.operationtype",
+    "pk": 4,
+    "fields": {
+        "name": "Пополнение",
+        "description": "+ на карточку - это хорошо",
+        "user": 2
+    }
+},
+{
+    "model": "cash_flow.operationtype",
+    "pk": 5,
+    "fields": {
+        "name": "Списание",
+        "description": "- на карту, ну чтож поделать",
+        "user": 2
+    }
+},
+{
+    "model": "cash_flow.category",
+    "pk": 1,
+    "fields": {
+        "name": "Квартплата",
+        "operation_type": 2,
+        "description": "Заплатили за квартиру",
+        "user": 1
+    }
+},
+{
+    "model": "cash_flow.category",
+    "pk": 2,
+    "fields": {
+        "name": "Зарплата",
+        "operation_type": 1,
+        "description": "Добби не свободен",
+        "user": 1
+    }
+},
+{
+    "model": "cash_flow.category",
+    "pk": 3,
+    "fields": {
+        "name": "Маркетинг",
+        "operation_type": 3,
+        "description": "Вернули денежку за отмену покупки",
+        "user": 1
+    }
+},
+{
+    "model": "cash_flow.category",
+    "pk": 4,
+    "fields": {
+        "name": "Оплата налога",
+        "operation_type": 2,
+        "description": "Не забывай! В НГ без долгов)",
+        "user": 1
+    }
+},
+{
+    "model": "cash_flow.category",
+    "pk": 5,
+    "fields": {
+        "name": "Продукты",
+        "operation_type": 5,
+        "description": "Поход в магазин за продовольствием",
+        "user": 2
+    }
+},
+{
+    "model": "cash_flow.category",
+    "pk": 6,
+    "fields": {
+        "name": "Зарплата",
+        "operation_type": 4,
+        "description": "10-го числа каждого месяца мы счастливы",
+        "user": 2
+    }
+},
+{
+    "model": "cash_flow.subcategory",
+    "pk": 1,
+    "fields": {
+        "name": "Аванс",
+        "category": 2,
+        "description": "В конце предыдущего месяца, чтобы дожить",
+        "user": 1
+    }
+},
+{
+    "model": "cash_flow.subcategory",
+    "pk": 2,
+    "fields": {
+        "name": "За отопление",
+        "category": 1,
+        "description": "Зима близко",
+        "user": 1
+    }
+},
+{
+    "model": "cash_flow.subcategory",
+    "pk": 3,
+    "fields": {
+        "name": "Основная ЗП",
+        "category": 2,
+        "description": "10-го числа каждого месяца)",
+        "user": 1
+    }
+},
+{
+    "model": "cash_flow.subcategory",
+    "pk": 4,
+    "fields": {
+        "name": "Возврат покупки",
+        "category": 3,
+        "description": "Не подошел товар",
+        "user": 1
+    }
+},
+{
+    "model": "cash_flow.subcategory",
+    "pk": 5,
+    "fields": {
+        "name": "Налог на имущество",
+        "category": 4,
+        "description": "хе-хе",
+        "user": 1
+    }
+},
+{
+    "model": "cash_flow.subcategory",
+    "pk": 6,
+    "fields": {
+        "name": "Ашан",
+        "category": 5,
+        "description": "Вкусненько должно быть",
+        "user": 2
+    }
+},
+{
+    "model": "cash_flow.subcategory",
+    "pk": 7,
+    "fields": {
+        "name": "Основная ЗП",
+        "category": 6,
+        "description": "это точно 10-го числа",
+        "user": 2
+    }
+},
+{
+    "model": "cash_flow.cashflow",
+    "pk": 1,
+    "fields": {
+        "date": "2025-10-02",
+        "status": 1,
+        "operation_type": 2,
+        "category": 1,
+        "subcategory": 2,
+        "amount": "3600.00",
+        "comment": "Чтобы тёплышко было",
+        "created_at": "2025-10-02T16:51:34.655Z",
+        "updated_at": "2025-10-02T16:51:34.655Z",
+        "user": 1
+    }
+},
+{
+    "model": "cash_flow.cashflow",
+    "pk": 2,
+    "fields": {
+        "date": "2025-10-01",
+        "status": 2,
+        "operation_type": 1,
+        "category": 2,
+        "subcategory": 1,
+        "amount": "5000.00",
+        "comment": "",
+        "created_at": "2025-10-02T17:13:31.416Z",
+        "updated_at": "2025-10-02T17:13:31.416Z",
+        "user": 1
+    }
+},
+{
+    "model": "cash_flow.cashflow",
+    "pk": 3,
+    "fields": {
+        "date": "2025-09-24",
+        "status": 1,
+        "operation_type": 2,
+        "category": 1,
+        "subcategory": 2,
+        "amount": "2500.00",
+        "comment": "",
+        "created_at": "2025-10-02T17:48:51.118Z",
+        "updated_at": "2025-10-02T17:48:51.118Z",
+        "user": 1
+    }
+},
+{
+    "model": "cash_flow.cashflow",
+    "pk": 4,
+    "fields": {
+        "date": "2025-10-02",
+        "status": 1,
+        "operation_type": 1,
+        "category": 2,
+        "subcategory": 3,
+        "amount": "2850.00",
+        "comment": "123",
+        "created_at": "2025-10-02T18:34:37.491Z",
+        "updated_at": "2025-10-02T18:34:37.491Z",
+        "user": 1
+    }
+},
+{
+    "model": "cash_flow.cashflow",
+    "pk": 6,
+    "fields": {
+        "date": "2025-09-29",
+        "status": 1,
+        "operation_type": 3,
+        "category": 3,
+        "subcategory": 4,
+        "amount": "6230.00",
+        "comment": "Проверка 123",
+        "created_at": "2025-10-02T18:39:21.517Z",
+        "updated_at": "2025-10-02T18:39:21.517Z",
+        "user": 1
+    }
+},
+{
+    "model": "cash_flow.cashflow",
+    "pk": 7,
+    "fields": {
+        "date": "2025-09-20",
+        "status": 3,
+        "operation_type": 2,
+        "category": 4,
+        "subcategory": 5,
+        "amount": "1810.00",
+        "comment": "ОП и НГ удался",
+        "created_at": "2025-10-02T18:55:21.275Z",
+        "updated_at": "2025-10-02T18:55:21.275Z",
+        "user": 1
+    }
+},
+{
+    "model": "cash_flow.cashflow",
+    "pk": 8,
+    "fields": {
+        "date": "2025-10-04",
+        "status": 5,
+        "operation_type": 4,
+        "category": 6,
+        "subcategory": 7,
+        "amount": "10000.00",
+        "comment": "123",
+        "created_at": "2025-10-04T11:54:39.277Z",
+        "updated_at": "2025-10-04T11:54:39.277Z",
+        "user": 2
+    }
+},
+{
+    "model": "cash_flow.cashflow",
+    "pk": 9,
+    "fields": {
+        "date": "2025-10-04",
+        "status": 4,
+        "operation_type": 5,
+        "category": 5,
+        "subcategory": 6,
+        "amount": "5000.00",
+        "comment": "321",
+        "created_at": "2025-10-04T11:55:00.102Z",
+        "updated_at": "2025-10-04T11:55:00.102Z",
+        "user": 2
+    }
+}
+]

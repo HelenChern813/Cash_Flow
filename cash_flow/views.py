@@ -1,3 +1,5 @@
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
@@ -6,7 +8,17 @@ from .forms import CashFlowForm, CategoryForm, OperationTypeForm, StatusForm, Su
 from .models import CashFlow, Category, OperationType, Status, Subcategory
 
 
-class CashFlowListView(ListView):
+class UserAccessMixin(LoginRequiredMixin):
+    """Миксин для проверки доступа пользователя"""
+
+    def get_queryset(self):
+        """Возвращает только объекты текущего пользователя"""
+        if hasattr(self, "model"):
+            return self.model.objects.filter(user=self.request.user)
+        return super().get_queryset()
+
+
+class CashFlowListView(UserAccessMixin, ListView):
     """Главная страница - список записей ДДС с фильтрацией"""
 
     model = CashFlow
@@ -49,12 +61,12 @@ class CashFlowListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["statuses"] = Status.objects.all()
-        context["operation_types"] = OperationType.objects.all()
-        context["categories"] = Category.objects.all()
-        context["subcategories"] = Subcategory.objects.all()
+        user = self.request.user
+        context["statuses"] = Status.objects.filter(user=user)
+        context["operation_types"] = OperationType.objects.filter(user=user)
+        context["categories"] = Category.objects.filter(user=user)
+        context["subcategories"] = Subcategory.objects.filter(user=user)
 
-        # Сохраняем параметры фильтрации для формы
         context["filter_params"] = {
             "start_date": self.request.GET.get("start_date", ""),
             "end_date": self.request.GET.get("end_date", ""),
@@ -67,7 +79,7 @@ class CashFlowListView(ListView):
         return context
 
 
-class CashFlowCreateView(CreateView):
+class CashFlowCreateView(UserAccessMixin, CreateView):
     """Создание новой записи ДДС"""
 
     model = CashFlow
@@ -75,12 +87,22 @@ class CashFlowCreateView(CreateView):
     template_name = "cashflow/cashflow_form.html"
     success_url = reverse_lazy("cash_flow:cashflow_list")
 
-    def form_valid(self, form):
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
 
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        messages.success(self.request, "Запись успешно создана!")
         return super().form_valid(form)
 
+    def form_invalid(self, form):
+        messages.error(self.request, "Пожалуйста, исправьте ошибки в форме.")
+        return super().form_invalid(form)
 
-class CashFlowUpdateView(UpdateView):
+
+class CashFlowUpdateView(UserAccessMixin, UpdateView):
     """Редактирование записи ДДС"""
 
     model = CashFlow
@@ -88,21 +110,38 @@ class CashFlowUpdateView(UpdateView):
     template_name = "cashflow/cashflow_form.html"
     success_url = reverse_lazy("cash_flow:cashflow_list")
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
 
-class CashFlowDeleteView(DeleteView):
+    def form_valid(self, form):
+        messages.success(self.request, "Запись успешно обновлена!")
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        messages.error(self.request, "Пожалуйста, исправьте ошибки в форме.")
+        return super().form_invalid(form)
+
+
+class CashFlowDeleteView(UserAccessMixin, DeleteView):
     """Удаление записи ДДС"""
 
     model = CashFlow
     template_name = "cashflow/cashflow_confirm_delete.html"
     success_url = reverse_lazy("cash_flow:cashflow_list")
 
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "Запись успешно удалена!")
+        return super().delete(request, *args, **kwargs)
+
 
 def get_subcategories(request):
     """AJAX-функция для получения подкатегорий по выбранной категории"""
 
     category_id = request.GET.get("category_id")
-    if category_id:
-        subcategories = Subcategory.objects.filter(category_id=category_id)
+    if category_id and request.user.is_authenticated:
+        subcategories = Subcategory.objects.filter(category_id=category_id, user=request.user)
         data = [{"id": sub.id, "name": sub.name} for sub in subcategories]
         return JsonResponse(data, safe=False)
     return JsonResponse([], safe=False)
@@ -112,14 +151,16 @@ def get_categories(request):
     """AJAX-функция для получения категорий по выбранному типу операции"""
 
     operation_type_id = request.GET.get("operation_type_id")
-    if operation_type_id:
-        categories = Category.objects.filter(operation_type_id=operation_type_id)
+    if operation_type_id and request.user.is_authenticated:
+        categories = Category.objects.filter(operation_type_id=operation_type_id, user=request.user)
         data = [{"id": cat.id, "name": cat.name} for cat in categories]
         return JsonResponse(data, safe=False)
     return JsonResponse([], safe=False)
 
 
-class StatusListView(ListView):
+class StatusListView(UserAccessMixin, ListView):
+    """Отображение списка статусов"""
+
     model = Status
     template_name = "cashflow/reference_list.html"
     context_object_name = "items"
@@ -134,11 +175,23 @@ class StatusListView(ListView):
         return context
 
 
-class StatusCreateView(CreateView):
+class StatusCreateView(UserAccessMixin, CreateView):
+    """Создание нового статуса"""
+
     model = Status
     form_class = StatusForm
     template_name = "cashflow/reference_form.html"
     success_url = reverse_lazy("cash_flow:status_list")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        messages.success(self.request, "Статус успешно создан!")
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -147,11 +200,22 @@ class StatusCreateView(CreateView):
         return context
 
 
-class StatusUpdateView(UpdateView):
+class StatusUpdateView(UserAccessMixin, UpdateView):
+    """Редактирование статуса"""
+
     model = Status
     form_class = StatusForm
     template_name = "cashflow/reference_form.html"
     success_url = reverse_lazy("cash_flow:status_list")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(self.request, "Статус успешно обновлен!")
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -160,10 +224,16 @@ class StatusUpdateView(UpdateView):
         return context
 
 
-class StatusDeleteView(DeleteView):
+class StatusDeleteView(UserAccessMixin, DeleteView):
+    """Удаление статуса"""
+
     model = Status
     template_name = "cashflow/reference_confirm_delete.html"
     success_url = reverse_lazy("cash_flow:status_list")
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "Статус успешно удален!")
+        return super().delete(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -173,7 +243,9 @@ class StatusDeleteView(DeleteView):
         return context
 
 
-class OperationTypeListView(ListView):
+class OperationTypeListView(UserAccessMixin, ListView):
+    """Отображение списка типов операций"""
+
     model = OperationType
     template_name = "cashflow/reference_list.html"
     context_object_name = "items"
@@ -188,11 +260,23 @@ class OperationTypeListView(ListView):
         return context
 
 
-class OperationTypeCreateView(CreateView):
+class OperationTypeCreateView(UserAccessMixin, CreateView):
+    """Создаение типа операции"""
+
     model = OperationType
     form_class = OperationTypeForm
     template_name = "cashflow/reference_form.html"
     success_url = reverse_lazy("cash_flow:operation_type_list")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        messages.success(self.request, "Тип операции успешно создан!")
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -201,11 +285,22 @@ class OperationTypeCreateView(CreateView):
         return context
 
 
-class OperationTypeUpdateView(UpdateView):
+class OperationTypeUpdateView(UserAccessMixin, UpdateView):
+    """Редактирование типа операций"""
+
     model = OperationType
     form_class = OperationTypeForm
     template_name = "cashflow/reference_form.html"
     success_url = reverse_lazy("cash_flow:operation_type_list")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(self.request, "Тип операции успешно обновлен!")
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -214,10 +309,16 @@ class OperationTypeUpdateView(UpdateView):
         return context
 
 
-class OperationTypeDeleteView(DeleteView):
+class OperationTypeDeleteView(UserAccessMixin, DeleteView):
+    """Удаление типа операции"""
+
     model = OperationType
     template_name = "cashflow/reference_confirm_delete.html"
     success_url = reverse_lazy("cash_flow:operation_type_list")
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "Тип операции успешно удален!")
+        return super().delete(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -227,7 +328,9 @@ class OperationTypeDeleteView(DeleteView):
         return context
 
 
-class CategoryListView(ListView):
+class CategoryListView(UserAccessMixin, ListView):
+    """Отображение списка категорий"""
+
     model = Category
     template_name = "cashflow/reference_list.html"
     context_object_name = "items"
@@ -242,11 +345,23 @@ class CategoryListView(ListView):
         return context
 
 
-class CategoryCreateView(CreateView):
+class CategoryCreateView(UserAccessMixin, CreateView):
+    """Создание новой категории"""
+
     model = Category
     form_class = CategoryForm
     template_name = "cashflow/reference_form.html"
     success_url = reverse_lazy("cash_flow:category_list")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        messages.success(self.request, "Категория успешно создана!")
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -255,11 +370,22 @@ class CategoryCreateView(CreateView):
         return context
 
 
-class CategoryUpdateView(UpdateView):
+class CategoryUpdateView(UserAccessMixin, UpdateView):
+    """Редактирование категории"""
+
     model = Category
     form_class = CategoryForm
     template_name = "cashflow/reference_form.html"
     success_url = reverse_lazy("cash_flow:category_list")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(self.request, "Категория успешно обновлена!")
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -268,10 +394,16 @@ class CategoryUpdateView(UpdateView):
         return context
 
 
-class CategoryDeleteView(DeleteView):
+class CategoryDeleteView(UserAccessMixin, DeleteView):
+    """Удаление категории"""
+
     model = Category
     template_name = "cashflow/reference_confirm_delete.html"
     success_url = reverse_lazy("cash_flow:category_list")
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "Категория успешно удалена!")
+        return super().delete(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -281,7 +413,9 @@ class CategoryDeleteView(DeleteView):
         return context
 
 
-class SubcategoryListView(ListView):
+class SubcategoryListView(UserAccessMixin, ListView):
+    """Отображение списка подкатегорий"""
+
     model = Subcategory
     template_name = "cashflow/reference_list.html"
     context_object_name = "items"
@@ -296,11 +430,23 @@ class SubcategoryListView(ListView):
         return context
 
 
-class SubcategoryCreateView(CreateView):
+class SubcategoryCreateView(UserAccessMixin, CreateView):
+    """Создание новой подкатегории"""
+
     model = Subcategory
     form_class = SubcategoryForm
     template_name = "cashflow/reference_form.html"
     success_url = reverse_lazy("cash_flow:subcategory_list")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        messages.success(self.request, "Подкатегория успешно создана!")
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -309,11 +455,22 @@ class SubcategoryCreateView(CreateView):
         return context
 
 
-class SubcategoryUpdateView(UpdateView):
+class SubcategoryUpdateView(UserAccessMixin, UpdateView):
+    """Редактирование подкатегории"""
+
     model = Subcategory
     form_class = SubcategoryForm
     template_name = "cashflow/reference_form.html"
     success_url = reverse_lazy("cash_flow:subcategory_list")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(self.request, "Подкатегория успешно обновлена!")
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -322,10 +479,16 @@ class SubcategoryUpdateView(UpdateView):
         return context
 
 
-class SubcategoryDeleteView(DeleteView):
+class SubcategoryDeleteView(UserAccessMixin, DeleteView):
+    """Удаление подкатегории"""
+
     model = Subcategory
     template_name = "cashflow/reference_confirm_delete.html"
     success_url = reverse_lazy("cash_flow:subcategory_list")
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "Подкатегория успешно удалена!")
+        return super().delete(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

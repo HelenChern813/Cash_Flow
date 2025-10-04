@@ -2,18 +2,22 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
+from users.models import User
+
 
 class Status(models.Model):
     """Модель статусов (Бизнес, Личное, Налог)"""
 
     name = models.CharField(
-        max_length=100, unique=True, verbose_name="Название статуса", help_text="Пример: Бизнес, Личное, Налог, другое"
+        max_length=100, verbose_name="Название статуса", help_text="Пример: Бизнес, Личное, Налог, другое"
     )
     description = models.TextField(blank=True, null=True, verbose_name="Описание", help_text="Описание статуса")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь", null=True, blank=True)
 
     class Meta:
         verbose_name = "Статус"
         verbose_name_plural = "Статусы"
+        unique_together = ["name", "user"]
 
     def __str__(self):
         return self.name
@@ -22,16 +26,16 @@ class Status(models.Model):
 class OperationType(models.Model):
     """Модель типов операций (Пополнение, Списание)"""
 
-    name = models.CharField(
-        max_length=100, unique=True, verbose_name="Название типа операции", help_text="Пополнение / Списание"
-    )
+    name = models.CharField(max_length=100, verbose_name="Название типа операции", help_text="Пополнение / Списание")
     description = models.TextField(
         blank=True, null=True, verbose_name="Описание", help_text="Введите описание типа оперции, если нужно"
     )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь", null=True, blank=True)
 
     class Meta:
         verbose_name = "Тип операции"
         verbose_name_plural = "Типы операций"
+        unique_together = ["name", "user"]
 
     def __str__(self):
         return self.name
@@ -41,17 +45,16 @@ class Category(models.Model):
     """Категории операций (привязаны к типам)"""
 
     name = models.CharField(max_length=100, verbose_name="Название категории", help_text="Введите название категории")
-
     operation_type = models.ForeignKey(OperationType, on_delete=models.CASCADE, verbose_name="Тип операции")
-
     description = models.TextField(
         blank=True, null=True, verbose_name="Описание", help_text="Введите описание категории"
     )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь")
 
     class Meta:
         verbose_name = "Категория"
         verbose_name_plural = "Категории"
-        unique_together = ["name", "operation_type"]
+        unique_together = ["name", "operation_type", "user"]
 
     def __str__(self):
         return f"{self.name} ({self.operation_type})"
@@ -65,11 +68,12 @@ class Subcategory(models.Model):
     )
     category = models.ForeignKey(Category, on_delete=models.CASCADE, verbose_name="Категория")
     description = models.TextField(blank=True, verbose_name="Описание", help_text="Введите описание подкатегории")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь")
 
     class Meta:
         verbose_name = "Подкатегория"
         verbose_name_plural = "Подкатегории"
-        unique_together = ["name", "category"]
+        unique_together = ["name", "category", "user"]
 
     def __str__(self):
         return f"{self.name} ({self.category})"
@@ -87,6 +91,7 @@ class CashFlow(models.Model):
     comment = models.TextField(blank=True, verbose_name="Комментарий")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания записи")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь")
 
     class Meta:
         verbose_name = "Запись ДДС"
@@ -108,6 +113,16 @@ class CashFlow(models.Model):
         if self.category_id and self.subcategory_id and hasattr(self, "subcategory") and hasattr(self, "category"):
             if self.subcategory.category_id != self.category_id:
                 raise ValidationError({"subcategory": "Выбранная подкатегория не принадлежит выбранной категории"})
+
+        # Проверка, что все объекты принадлежат одному пользователю
+        if (
+            hasattr(self, "user")
+            and self.user
+            and hasattr(self.status, "user")
+            and self.status.user
+            and self.status.user != self.user
+        ):
+            raise ValidationError({"status": "Выбранный статус не принадлежит текущему пользователю"})
 
     def save(self, *args, **kwargs):
         """Переопределяем save для вызова валидации"""

@@ -35,31 +35,34 @@ class CashFlowForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
+
+        # Ограничиваем выбор только пользовательскими данными
+        if self.user:
+            self.fields["status"].queryset = Status.objects.filter(user=self.user)
+            self.fields["operation_type"].queryset = OperationType.objects.filter(user=self.user)
+            self.fields["category"].queryset = Category.objects.filter(user=self.user)
+            self.fields["subcategory"].queryset = Subcategory.objects.filter(user=self.user)
 
         # Для существующей записи ограничиваем выбор категорий и подкатегорий
         if self.instance and self.instance.pk:
             if self.instance.operation_type:
-                self.fields["category"].queryset = Category.objects.filter(operation_type=self.instance.operation_type)
+                self.fields["category"].queryset = Category.objects.filter(
+                    operation_type=self.instance.operation_type, user=self.user
+                )
             if self.instance.category:
-                self.fields["subcategory"].queryset = Subcategory.objects.filter(category=self.instance.category)
+                self.fields["subcategory"].queryset = Subcategory.objects.filter(
+                    category=self.instance.category, user=self.user
+                )
         else:
-            self.fields["category"].queryset = Category.objects.all()
-            self.fields["subcategory"].queryset = Subcategory.objects.all()
-
-            if self.initial.get("operation_type"):
-                operation_type = self.initial["operation_type"]
-                self.fields["category"].queryset = Category.objects.filter(operation_type=operation_type)
-
-            if self.initial.get("category"):
-                category = self.initial["category"]
-                self.fields["subcategory"].queryset = Subcategory.objects.filter(category=category)
+            self.fields["category"].queryset = Category.objects.filter(user=self.user)
+            self.fields["subcategory"].queryset = Subcategory.objects.filter(user=self.user)
 
     def clean(self):
         """Дополнительная валидация на уровне формы"""
 
         cleaned_data = super().clean()
-
         operation_type = cleaned_data.get("operation_type")
         category = cleaned_data.get("category")
         subcategory = cleaned_data.get("subcategory")
@@ -86,6 +89,23 @@ class StatusForm(forms.ModelForm):
             "description": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
 
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+
+    # def clean_name(self):
+    #     """Проверка уникальности имени статуса в рамках пользователя"""
+    #
+    #     name = self.cleaned_data.get('name')
+    #     if self.user and name:
+    #
+    #         existing_status = Status.objects.filter(name=name, user=self.user)
+    #         if self.instance and self.instance.pk:
+    #             existing_status = existing_status.exclude(pk=self.instance.pk)
+    #         if existing_status.exists():
+    #             raise forms.ValidationError("Статус с таким названием уже существует у вас.")
+    #     return name
+
 
 class OperationTypeForm(forms.ModelForm):
     """Форма для типов операций"""
@@ -97,6 +117,22 @@ class OperationTypeForm(forms.ModelForm):
             "name": forms.TextInput(attrs={"class": "form-control", "required": True}),
             "description": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+
+    # def clean_name(self):
+    #     """Проверка уникальности имени типа операции в рамках пользователя"""
+    #
+    #     name = self.cleaned_data.get('name')
+    #     if self.user and name:
+    #         existing_operation_type = OperationType.objects.filter(name=name, user=self.user)
+    #         if self.instance and self.instance.pk:
+    #             existing_operation_type = existing_operation_type.exclude(pk=self.instance.pk)
+    #         if existing_operation_type.exists():
+    #             raise forms.ValidationError("Тип операции с таким названием уже существует у вас.")
+    #     return name
 
 
 class CategoryForm(forms.ModelForm):
@@ -111,6 +147,12 @@ class CategoryForm(forms.ModelForm):
             "description": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
 
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        if self.user:
+            self.fields["operation_type"].queryset = OperationType.objects.filter(user=self.user)
+
 
 class SubcategoryForm(forms.ModelForm):
     """Форма для подкатегорий"""
@@ -123,3 +165,9 @@ class SubcategoryForm(forms.ModelForm):
             "category": forms.Select(attrs={"class": "form-control", "required": True}),
             "description": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        if self.user:
+            self.fields["category"].queryset = Category.objects.filter(user=self.user)
