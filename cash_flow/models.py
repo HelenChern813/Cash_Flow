@@ -42,7 +42,9 @@ class Category(models.Model):
 
     name = models.CharField(max_length=100, verbose_name="Название категории", help_text="Введите название категории")
 
-    operation_type = models.ForeignKey(OperationType, on_delete=models.CASCADE, verbose_name="Тип операции")
+    operation_type = models.ForeignKey(
+        OperationType, on_delete=models.CASCADE, verbose_name="Тип операции", blank=True, null=True
+    )
 
     description = models.TextField(
         blank=True, null=True, verbose_name="Описание", help_text="Введите описание категории"
@@ -63,7 +65,7 @@ class Subcategory(models.Model):
     name = models.CharField(
         max_length=100, verbose_name="Название подкатегории", help_text="Введите название подкатегории"
     )
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, verbose_name="Категория")
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, verbose_name="Категория", blank=True, null=True)
     description = models.TextField(blank=True, verbose_name="Описание", help_text="Введите описание подкатегории")
 
     class Meta:
@@ -79,10 +81,14 @@ class CashFlow(models.Model):
     """Записи движения денежных средств"""
 
     date = models.DateField(default=timezone.now, verbose_name="Дата операции")
-    status = models.ForeignKey(Status, on_delete=models.PROTECT, verbose_name="Статус")
-    operation_type = models.ForeignKey(OperationType, on_delete=models.PROTECT, verbose_name="Тип операции")
-    category = models.ForeignKey(Category, on_delete=models.PROTECT, verbose_name="Категория")
-    subcategory = models.ForeignKey(Subcategory, on_delete=models.PROTECT, verbose_name="Подкатегория")
+    status = models.ForeignKey(Status, on_delete=models.SET_NULL, verbose_name="Статус", blank=True, null=True)
+    operation_type = models.ForeignKey(
+        OperationType, on_delete=models.SET_NULL, verbose_name="Тип операции", blank=True, null=True
+    )
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, verbose_name="Категория", blank=True, null=True)
+    subcategory = models.ForeignKey(
+        Subcategory, on_delete=models.SET_NULL, verbose_name="Подкатегория", blank=True, null=True
+    )
     amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Сумма")
     comment = models.TextField(blank=True, verbose_name="Комментарий")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания записи")
