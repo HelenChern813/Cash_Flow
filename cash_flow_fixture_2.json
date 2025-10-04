@@ -5,7 +5,7 @@
     "fields": {
         "name": "Личное",
         "description": "Личный статус 2",
-        "user": null
+        "user": 1
     }
 },
 {
@@ -14,7 +14,7 @@
     "fields": {
         "name": "Бизнес",
         "description": "Бизнес статус",
-        "user": null
+        "user": 1
     }
 },
 {
@@ -23,7 +23,7 @@
     "fields": {
         "name": "Налог",
         "description": "Оплата налогов",
-        "user": null
+        "user": 1
     }
 },
 {
@@ -50,7 +50,7 @@
     "fields": {
         "name": "Пополнение",
         "description": "Зачисление денег на счет",
-        "user": null
+        "user": 1
     }
 },
 {
@@ -59,7 +59,7 @@
     "fields": {
         "name": "Списание",
         "description": "Забрали со счета денежки",
-        "user": null
+        "user": 1
     }
 },
 {
@@ -68,7 +68,7 @@
     "fields": {
         "name": "Возврат",
         "description": "Тоже пополнение, но суть операции другая",
-        "user": null
+        "user": 1
     }
 },
 {
